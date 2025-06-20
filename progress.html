@@ -49,5 +49,25 @@
 <p><strong>Date:</strong> 2024-05-29</p>
 <p><strong>Version:</strong> 1.0.9</p>
 
+<h3>Feature: Sensor Reading Display Fix</h3>
+<p><strong>Description:</strong> Corrected the display of sensor readings by updating the `getSensorReadings` query in `convex/sensorReadings.ts` to correctly filter by `mqttTopicPrefix` when no specific row is selected. Also, adjusted the frontend call to `addSimulatedReading` in `app/page.tsx` to align with the backend's updated argument requirements and ensured the sensor readings query consistently uses the selected system's MQTT topic prefix.</p>
+<p><strong>Date:</strong> 2024-05-30</p>
+<p><strong>Version:</strong> 1.1.0</p>
+
+<h3>Feature: Add Simulated Reading Button Redirect</h3>
+<p><strong>Description:</strong> Modified the "Add Simulated Reading" button on the main dashboard (`app/page.tsx`) to redirect the user to the `/simulate-mqtt` page when clicked. This provides a clear path for users to access the simulation interface.</p>
+<p><strong>Date:</strong> 2024-05-30</p>
+<p><strong>Version:</strong> 1.1.1</p>
+
+<h3>Feature: Simulate MQTT Page Styling Fix</h3>
+<p><strong>Description:</strong> Addressed the issue where the `/simulate-mqtt` page appeared black by explicitly setting a light background color (`bg-gray-100` and `bg-white`) for the page and its content. Additionally, removed the overly aggressive `* { color: black !important; }` rule from `app/globals.css` to allow proper text color rendering based on theme settings.</p>
+<p><strong>Date:</strong> 2024-05-30</p>
+<p><strong>Version:</strong> 1.1.2</p>
+
+<h3>Feature: Default MQTT Broker for Simulator</h3>
+<p><strong>Description:</strong> Updated the default MQTT broker URL in `app/simulate-mqtt/page.tsx` to `ws://test.mosquitto.org:8080`. This provides a readily available public broker for simulating sensor readings.</p>
+<p><strong>Date:</strong> 2024-05-30</p>
+<p><strong>Version:</strong> 1.1.3</p>
+
 </body>
 </html> 

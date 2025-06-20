@@ -1,8 +1,9 @@
 'use client'
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../convex/_generated/api";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Id } from "../convex/_generated/dataModel";
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
   const createDefaultPlantProfiles = useMutation(api.plantProfiles.createDefaultPlantProfiles);
@@ -18,16 +19,26 @@ export default function Home() {
   const systems = useQuery(api.systems.getSystems, { mqttTopicPrefix });
   const plantProfiles = useQuery(api.plantProfiles.getPlantProfiles, {});
 
+  const selectedSystemMqttTopicPrefix = useMemo(() => {
+    if (selectedSystemId && systems) {
+      const system = systems.find(s => s._id === selectedSystemId);
+      return system ? system.mqttTopicPrefix : mqttTopicPrefix;
+    }
+    return mqttTopicPrefix;
+  }, [selectedSystemId, systems, mqttTopicPrefix]);
+
   const rows = useQuery(
     api.systems.getRowsBySystem,
     selectedSystemId ? { systemId: selectedSystemId } : "skip"
   );
 
   const sensorReadings = useQuery(
-    api.readings.getSensorReadings,
-    selectedRowId 
-      ? { rowId: selectedRowId } 
-      : { mqttTopicPrefix: mqttTopicPrefix }
+    api.sensorReadings.getSensorReadings,
+    selectedRowId
+      ? { rowId: selectedRowId }
+      : selectedSystemMqttTopicPrefix
+        ? { mqttTopicPrefix: selectedSystemMqttTopicPrefix }
+        : "skip"
   );
 
   const alerts = useQuery(
@@ -43,6 +54,7 @@ export default function Home() {
   const updatePlantProfile = useMutation(api.readings.updatePlantProfile);
   const resolveAlert = useMutation(api.alerts.resolveAlert);
   const addSimulatedReading = useMutation(api.sensorReadings.addSimulatedSensorReading);
+  const router = useRouter();
 
   // Initialize default organization and plant profiles
   useEffect(() => {
@@ -193,7 +205,7 @@ export default function Home() {
                 <p className="text-gray-900">No sensor readings available for this row.</p>
               ) : (
                 <div className="space-y-2">
-                  {sensorReadings.map((reading) => (
+                  {sensorReadings.map((reading: any) => (
                     <div key={reading._id} className="border-b pb-2">
                       <p>Air Temp: {reading.data.airTemp}°C</p>
                       <p>Water Temp: {reading.data.waterTemp}°C</p>
@@ -205,13 +217,8 @@ export default function Home() {
                 </div>
               )}
               <button
-                onClick={async () => {
-                  if (selectedRowId) {
-                    await addSimulatedReading({ rowId: selectedRowId, topicPrefix: mqttTopicPrefix });
-                  }
-                }}
+                onClick={() => router.push('/simulate-mqtt')}
                 className="mt-4 bg-green-500 text-white p-2 rounded shadow hover:bg-green-600"
-                disabled={!selectedRowId}
               >
                 Add Simulated Reading
               </button>

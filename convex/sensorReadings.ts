@@ -4,17 +4,29 @@ import { v } from "convex/values";
 
 export const getSensorReadings = query({
   args: {
-    rowId: v.id("rows"),
+    rowId: v.optional(v.id("rows")),
+    mqttTopicPrefix: v.optional(v.string()), // Add mqttTopicPrefix to args
     timeRange: v.optional(v.string()), // This can be used to filter by time, e.g., "24h", "7d"
   },
-  handler: async (ctx: any, args: { rowId: Id<"rows">; timeRange?: string }) => {
-    // For simplicity, let's just fetch the latest 100 readings for the given rowId
+  handler: async (ctx: any, args: { rowId?: Id<"rows">; mqttTopicPrefix?: string; timeRange?: string }) => {
+    // For simplicity, let's just fetch the latest 100 readings for the given rowId or mqttTopicPrefix
     // In a real application, 'timeRange' would be used to filter by timestamp
-    return await ctx.db
-      .query("sensorReadings")
-      .withIndex("by_rowId_timestamp", (q: any) => q.eq("rowId", args.rowId))
-      .order("desc")
-      .take(100);
+    if (args.rowId) {
+      return await ctx.db
+        .query("sensorReadings")
+        .withIndex("by_rowId_timestamp", (q: any) => q.eq("rowId", args.rowId))
+        .order("desc")
+        .take(100);
+    } else if (args.mqttTopicPrefix) {
+      return await ctx.db
+        .query("sensorReadings")
+        .withIndex("by_mqttTopicPrefix_timestamp", (q: any) => q.eq("mqttTopicPrefix", args.mqttTopicPrefix))
+        .order("desc")
+        .take(100);
+    } else {
+      // If neither rowId nor mqttTopicPrefix is provided, return an empty array or throw an error
+      return [];
+    }
   },
 });
 
@@ -55,10 +67,9 @@ export const addSensorReading = mutation({
 export const addSimulatedSensorReading = mutation({
   args: {
     rowId: v.id("rows"),
-    topicPrefix: v.string(),
   },
-  handler: async (ctx: any, args: { rowId: Id<"rows">; topicPrefix: string }) => {
-    const { rowId, topicPrefix } = args;
+  handler: async (ctx: any, args: { rowId: Id<"rows"> }) => {
+    const { rowId } = args;
     const timestamp = Date.now();
 
     // Fetch the row to get the systemId
