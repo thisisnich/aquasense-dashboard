@@ -14,6 +14,7 @@ import type {
   FunctionReference,
 } from "convex/server";
 import type * as alerts from "../alerts.js";
+import type * as mqtt from "../mqtt.js";
 import type * as organizations from "../organizations.js";
 import type * as plantProfiles from "../plantProfiles.js";
 import type * as readings from "../readings.js";
@@ -30,6 +31,7 @@ import type * as systems from "../systems.js";
  */
 declare const fullApi: ApiFromModules<{
   alerts: typeof alerts;
+  mqtt: typeof mqtt;
   organizations: typeof organizations;
   plantProfiles: typeof plantProfiles;
   readings: typeof readings;

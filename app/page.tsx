@@ -5,6 +5,18 @@ import { useEffect, useState, useMemo } from "react";
 import { Id } from "../convex/_generated/dataModel";
 import { useRouter } from 'next/navigation';
 
+interface SensorDataCardProps {
+  title: string;
+  value: string;
+}
+
+const SensorDataCard: React.FC<SensorDataCardProps> = ({ title, value }) => (
+  <div className="bg-white p-4 rounded shadow text-gray-900 flex flex-col items-center justify-center text-center">
+    <h3 className="text-lg font-semibold mb-1">{title}</h3>
+    <p className="text-3xl font-bold text-indigo-600">{value}</p>
+  </div>
+);
+
 export default function Home() {
   const createDefaultPlantProfiles = useMutation(api.plantProfiles.createDefaultPlantProfiles);
   const createDefaultOrganization = useMutation(api.organizations.createDefaultOrganizationPublic);
@@ -76,41 +88,33 @@ export default function Home() {
             organizationId: orgId,
             mqttTopicPrefix: mqttTopicPrefix,
           });
+          // Immediately set selectedSystemId to the newly created system
           setSelectedSystemId(systemId);
 
           // Create default plant profiles
           await createDefaultPlantProfiles();
 
-          // No need to call api.plantProfiles.getPlantProfiles() directly here
-          // The plantProfiles variable from useQuery will be available via useEffect dependency
           if (systemId && (!rows || rows.length === 0) && plantProfiles && plantProfiles.length > 0) {
-            await createRow({
+            const newRowId = await createRow({
               systemId: systemId,
               rowNumber: 1,
               controllerMAC: "AA:BB:CC:DD:EE:FF",
               currentPlantProfile: plantProfiles[0]._id, // Assign first default profile
             });
+            // Immediately set selectedRowId to the newly created row
+            setSelectedRowId(newRowId);
           }
+        } else if (systems.length > 0 && selectedSystemId === null) {
+          // If systems exist but no system is selected, select the first one
+          setSelectedSystemId(systems[0]._id);
         }
       }
     };
 
-    if (organizations !== undefined && systems !== undefined && plantProfiles !== undefined) {
+    if (organizations !== undefined && systems !== undefined && plantProfiles !== undefined && rows !== undefined) {
       initializeData();
     }
-  }, [organizations, systems, plantProfiles, createDefaultOrganization, createSystem, createDefaultPlantProfiles, createRow, rows]);
-
-  useEffect(() => {
-    if (systems && systems.length > 0 && selectedSystemId === null) {
-      setSelectedSystemId(systems[0]._id);
-    }
-  }, [systems, selectedSystemId]);
-
-  useEffect(() => {
-    if (rows && rows.length > 0 && selectedRowId === null) {
-      setSelectedRowId(rows[0]._id);
-    }
-  }, [rows, selectedRowId]);
+  }, [organizations, systems, plantProfiles, createDefaultOrganization, createSystem, createDefaultPlantProfiles, createRow, rows, selectedSystemId, selectedRowId]); // Added selectedSystemId, selectedRowId to dependencies
 
   const handlePlantProfileChange = async (newProfileId: Id<"plantProfiles">) => {
     if (selectedRowId) {
@@ -138,8 +142,8 @@ export default function Home() {
           <span className="text-gray-800">Organization: {organizations[0].name}</span>
         )}
       </header>
-      <main className="flex-1 p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white p-4 rounded shadow col-span-full mb-4">
+      <main className="flex-1 p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-white p-4 rounded shadow col-span-full mb-4 text-gray-900">
           <label htmlFor="mqttTopicPrefix" className="block text-sm font-medium text-gray-800">MQTT Topic Prefix:</label>
           <input
             type="text"
@@ -151,84 +155,35 @@ export default function Home() {
           />
         </div>
 
-        <div className="bg-white p-4 rounded shadow">
-          <h2 className="text-xl font-semibold mb-4 text-gray-900">Systems</h2>
-          <ul className="space-y-2">
-            {systems.length === 0 ? (
-              <li className="text-gray-900">No systems found.</li>
-            ) : (
-              systems.map((system) => (
-                <li
-                  key={system._id}
-                  className={`cursor-pointer p-2 rounded ${selectedSystemId === system._id ? "bg-blue-100" : "hover:bg-gray-50"}`}
-                  onClick={() => setSelectedSystemId(system._id)}
-                >
-                  {system.name} ({system.location})
-                </li>
-              ))
-            )}
-          </ul>
-        </div>
-
-        <div className="bg-white p-4 rounded shadow">
-          <h2 className="text-xl font-semibold mb-4 text-gray-900">Rows</h2>
-          <ul className="space-y-2">
-            {rows && rows.length === 0 ? (
-              <li className="text-gray-900">No rows found for this system.</li>
-            ) : (
-              rows && rows.map((row) => (
-                <li
-                  key={row._id}
-                  className={`cursor-pointer p-2 rounded ${selectedRowId === row._id ? "bg-blue-100" : "hover:bg-gray-50"}`}
-                  onClick={() => setSelectedRowId(row._id)}
-                >
-                  Row {row.rowNumber}
-                </li>
-              ))
-            )}
-          </ul>
-          {selectedRowId && (
-            <button
-              onClick={() => setSelectedRowId(null)}
-              className="mt-4 bg-gray-300 text-gray-800 p-2 rounded shadow hover:bg-gray-400"
-            >
-              Clear Row Selection
-            </button>
-          )}
-        </div>
-
-        <div className="bg-white p-4 rounded shadow">
-          <h2 className="text-xl font-semibold mb-4 text-gray-900">Sensor Readings</h2>
-          {sensorReadings ? (
-            <div>
-              {sensorReadings.length === 0 ? (
-                <p className="text-gray-900">No sensor readings available for this row.</p>
-              ) : (
-                <div className="space-y-2">
-                  {sensorReadings.map((reading: any) => (
-                    <div key={reading._id} className="border-b pb-2">
-                      <p>Air Temp: {reading.data.airTemp}°C</p>
-                      <p>Water Temp: {reading.data.waterTemp}°C</p>
-                      <p>Humidity: {reading.data.humidity}%</p>
-                      <p>Light Intensity: {reading.data.lightIntensity} µmol/m²/s</p>
-                      <p className="text-sm text-gray-800">Timestamp: {new Date(reading.timestamp).toLocaleString()}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-              <button
-                onClick={() => router.push('/simulate-mqtt')}
-                className="mt-4 bg-green-500 text-white p-2 rounded shadow hover:bg-green-600"
-              >
-                Add Simulated Reading
-              </button>
-            </div>
+        {/* New Sensor Data Cards */}
+        <div className="col-span-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4 mb-4">
+          {sensorReadings && sensorReadings.length > 0 ? (
+            <>
+              <SensorDataCard title="Air Temp" value={`${sensorReadings[0].data.airTemp}°C`} />
+              <SensorDataCard title="Water Temp" value={`${sensorReadings[0].data.waterTemp}°C`} />
+              <SensorDataCard title="Humidity" value={`${sensorReadings[0].data.humidity}%`} />
+              <SensorDataCard title="Light Intensity" value={`${sensorReadings[0].data.lIntensity} µmol/m²/s`} />
+              <SensorDataCard title="Light Duration" value={`${sensorReadings[0].data.lDuration} hours`} />
+              <SensorDataCard title="CO2 Level" value={`${sensorReadings[0].data.co2Level} ppm`} />
+              <SensorDataCard title="Flow Rate" value={`${sensorReadings[0].data.flowRate} L/min`} />
+            </>
           ) : (
-            <p>Select a row to view sensor readings.</p>
+            <div className="col-span-full bg-white p-4 rounded shadow text-gray-900">
+              <p>No sensor readings available. Click "Add Simulated Reading" to generate some data.</p>
+            </div>
           )}
         </div>
 
-        <div className="bg-white p-4 rounded shadow col-span-full">
+        <div className="col-span-full flex justify-end mb-4">
+          <button
+            onClick={() => router.push('/simulate-mqtt')}
+            className="mt-4 bg-green-500 text-white p-2 rounded shadow hover:bg-green-600"
+          >
+            Add Simulated Reading
+          </button>
+        </div>
+
+        <div className="bg-white p-4 rounded shadow col-span-full text-gray-900">
           <h2 className="text-xl font-semibold mb-4 text-gray-900">Plant Profiles</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {plantProfiles && plantProfiles.map((profile) => (
@@ -256,7 +211,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded shadow col-span-full">
+        <div className="bg-white p-4 rounded shadow col-span-full text-gray-900">
           <h2 className="text-xl font-semibold mb-4 text-gray-900">Active Alerts</h2>
           <ul className="space-y-2">
             {alerts && alerts.length === 0 ? (
@@ -283,7 +238,7 @@ export default function Home() {
           </ul>
         </div>
 
-        <div className="bg-white p-4 rounded shadow col-span-full">
+        <div className="bg-white p-4 rounded shadow col-span-full text-gray-900">
           <h2 className="text-xl font-semibold mb-4 text-gray-900">Alert Rules</h2>
           <ul className="space-y-2">
             {alertRules && alertRules.length === 0 ? (
