@@ -10,12 +10,13 @@ export default function Home() {
   const createSystem = useMutation(api.systems.createSystem);
   const createRow = useMutation(api.systems.createRow);
 
-  const organizations = useQuery(api.organizations.getOrganizations);
-  const systems = useQuery(api.systems.getSystems);
-  const plantProfiles = useQuery(api.plantProfiles.getPlantProfiles, {});
-
+  const [mqttTopicPrefix, setMqttTopicPrefix] = useState<string>('m5stack'); // Default MQTT topic prefix
   const [selectedSystemId, setSelectedSystemId] = useState<Id<"systems"> | null>(null);
   const [selectedRowId, setSelectedRowId] = useState<Id<"rows"> | null>(null);
+
+  const organizations = useQuery(api.organizations.getOrganizations);
+  const systems = useQuery(api.systems.getSystems, { mqttTopicPrefix });
+  const plantProfiles = useQuery(api.plantProfiles.getPlantProfiles, {});
 
   const rows = useQuery(
     api.systems.getRowsBySystem,
@@ -24,7 +25,9 @@ export default function Home() {
 
   const sensorReadings = useQuery(
     api.readings.getSensorReadings,
-    selectedRowId ? { rowId: selectedRowId } : "skip"
+    selectedRowId 
+      ? { rowId: selectedRowId } 
+      : { mqttTopicPrefix: mqttTopicPrefix }
   );
 
   const alerts = useQuery(
@@ -59,6 +62,7 @@ export default function Home() {
             location: "Urban Greenhouse",
             masterControllerMAC: "00:1A:2B:3C:4D:5E",
             organizationId: orgId,
+            mqttTopicPrefix: mqttTopicPrefix,
           });
           setSelectedSystemId(systemId);
 
@@ -119,15 +123,27 @@ export default function Home() {
       <header className="bg-white shadow p-4 flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-800">AquaSense Dashboard</h1>
         {organizations && organizations.length > 0 && (
-          <span className="text-gray-600">Organization: {organizations[0].name}</span>
+          <span className="text-gray-800">Organization: {organizations[0].name}</span>
         )}
       </header>
       <main className="flex-1 p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-white p-4 rounded shadow col-span-full mb-4">
+          <label htmlFor="mqttTopicPrefix" className="block text-sm font-medium text-gray-800">MQTT Topic Prefix:</label>
+          <input
+            type="text"
+            id="mqttTopicPrefix"
+            value={mqttTopicPrefix}
+            onChange={(e) => setMqttTopicPrefix(e.target.value)}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+            placeholder="e.g., myfarm"
+          />
+        </div>
+
         <div className="bg-white p-4 rounded shadow">
-          <h2 className="text-xl font-semibold mb-4">Systems</h2>
+          <h2 className="text-xl font-semibold mb-4 text-gray-900">Systems</h2>
           <ul className="space-y-2">
             {systems.length === 0 ? (
-              <li>No systems found.</li>
+              <li className="text-gray-900">No systems found.</li>
             ) : (
               systems.map((system) => (
                 <li
@@ -143,10 +159,10 @@ export default function Home() {
         </div>
 
         <div className="bg-white p-4 rounded shadow">
-          <h2 className="text-xl font-semibold mb-4">Rows</h2>
+          <h2 className="text-xl font-semibold mb-4 text-gray-900">Rows</h2>
           <ul className="space-y-2">
             {rows && rows.length === 0 ? (
-              <li>No rows found for this system.</li>
+              <li className="text-gray-900">No rows found for this system.</li>
             ) : (
               rows && rows.map((row) => (
                 <li
@@ -159,14 +175,22 @@ export default function Home() {
               ))
             )}
           </ul>
+          {selectedRowId && (
+            <button
+              onClick={() => setSelectedRowId(null)}
+              className="mt-4 bg-gray-300 text-gray-800 p-2 rounded shadow hover:bg-gray-400"
+            >
+              Clear Row Selection
+            </button>
+          )}
         </div>
 
         <div className="bg-white p-4 rounded shadow">
-          <h2 className="text-xl font-semibold mb-4">Sensor Readings</h2>
-          {selectedRowId && sensorReadings ? (
+          <h2 className="text-xl font-semibold mb-4 text-gray-900">Sensor Readings</h2>
+          {sensorReadings ? (
             <div>
               {sensorReadings.length === 0 ? (
-                <p>No sensor readings available for this row.</p>
+                <p className="text-gray-900">No sensor readings available for this row.</p>
               ) : (
                 <div className="space-y-2">
                   {sensorReadings.map((reading) => (
@@ -175,7 +199,7 @@ export default function Home() {
                       <p>Water Temp: {reading.data.waterTemp}°C</p>
                       <p>Humidity: {reading.data.humidity}%</p>
                       <p>Light Intensity: {reading.data.lightIntensity} µmol/m²/s</p>
-                      <p className="text-sm text-gray-500">Timestamp: {new Date(reading.timestamp).toLocaleString()}</p>
+                      <p className="text-sm text-gray-800">Timestamp: {new Date(reading.timestamp).toLocaleString()}</p>
                     </div>
                   ))}
                 </div>
@@ -183,7 +207,7 @@ export default function Home() {
               <button
                 onClick={async () => {
                   if (selectedRowId) {
-                    await addSimulatedReading({ rowId: selectedRowId });
+                    await addSimulatedReading({ rowId: selectedRowId, topicPrefix: mqttTopicPrefix });
                   }
                 }}
                 className="mt-4 bg-green-500 text-white p-2 rounded shadow hover:bg-green-600"
@@ -198,7 +222,7 @@ export default function Home() {
         </div>
 
         <div className="bg-white p-4 rounded shadow col-span-full">
-          <h2 className="text-xl font-semibold mb-4">Plant Profiles</h2>
+          <h2 className="text-xl font-semibold mb-4 text-gray-900">Plant Profiles</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {plantProfiles && plantProfiles.map((profile) => (
               <div
@@ -226,19 +250,19 @@ export default function Home() {
         </div>
 
         <div className="bg-white p-4 rounded shadow col-span-full">
-          <h2 className="text-xl font-semibold mb-4">Active Alerts</h2>
+          <h2 className="text-xl font-semibold mb-4 text-gray-900">Active Alerts</h2>
           <ul className="space-y-2">
             {alerts && alerts.length === 0 ? (
-              <li>No active alerts.</li>
+              <li className="text-gray-900">No active alerts.</li>
             ) : (
               alerts && alerts.map((alert) => (
                 <li key={alert._id} className="border-b pb-2 flex justify-between items-center">
                   <div>
                     <p className="font-semibold">{alert.type.toUpperCase()}: {alert.message}</p>
-                    <p className="text-sm text-gray-600">Parameter: {alert.parameter}, Value: {alert.value}, Threshold: {alert.threshold}</p>
-                    <p className="text-sm text-gray-500">System: {systems?.find(s => s._id === alert.systemId)?.name || 'N/A'}</p>
-                    {alert.rowId && <p className="text-sm text-gray-500">Row: {rows?.find(r => r._id === alert.rowId)?.rowNumber || 'N/A'}</p>}
-                    <p className="text-sm text-gray-500">Time: {new Date(alert.createdAt).toLocaleString()}</p>
+                    <p className="text-sm text-gray-900">Parameter: {alert.parameter}, Value: {alert.value}, Threshold: {alert.threshold}</p>
+                    <p className="text-sm text-gray-800">System: {systems?.find(s => s._id === alert.systemId)?.name || 'N/A'}</p>
+                    {alert.rowId && <p className="text-sm text-gray-800">Row: {rows?.find(r => r._id === alert.rowId)?.rowNumber || 'N/A'}</p>}
+                    <p className="text-sm text-gray-800">Time: {new Date(alert.createdAt).toLocaleString()}</p>
                   </div>
                   <button
                     className="ml-4 bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
@@ -253,10 +277,10 @@ export default function Home() {
         </div>
 
         <div className="bg-white p-4 rounded shadow col-span-full">
-          <h2 className="text-xl font-semibold mb-4">Alert Rules</h2>
+          <h2 className="text-xl font-semibold mb-4 text-gray-900">Alert Rules</h2>
           <ul className="space-y-2">
             {alertRules && alertRules.length === 0 ? (
-              <li>No alert rules configured.</li>
+              <li className="text-gray-900">No alert rules configured.</li>
             ) : (
               alertRules && alertRules.map((rule) => (
                 <li key={rule._id} className="border-b pb-2">

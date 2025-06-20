@@ -29,9 +29,12 @@ export default defineSchema({
     organizationId: v.id("organizations"),
     location: v.string(),
     masterControllerMAC: v.string(),
+    mqttTopicPrefix: v.string(),
     isActive: v.boolean(),
     createdAt: v.number(),
-  }).index("by_organization", ["organizationId"]),
+  })
+    .index("by_organization", ["organizationId"])
+    .index("by_mqttTopicPrefix", ["mqttTopicPrefix"]),
 
   rows: defineTable({
     systemId: v.id("systems"),
@@ -75,7 +78,9 @@ export default defineSchema({
       waterLevel: v.optional(v.number()),
       flowRate: v.optional(v.number()),
     }),
-  }).index("by_row_timestamp", ["rowId", "timestamp"]),
+    mqttTopicPrefix: v.string(),
+  }).index("by_row_timestamp", ["rowId", "timestamp"])
+    .index("by_mqttTopicPrefix_timestamp", ["mqttTopicPrefix", "timestamp"]),
 
   alerts: defineTable({
     systemId: v.id("systems"),

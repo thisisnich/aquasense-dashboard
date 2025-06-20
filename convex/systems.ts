@@ -2,8 +2,20 @@ import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 
 export const getSystems = query({
-  handler: async (ctx) => {
-    return ctx.db.query("systems").collect();
+  args: {
+    mqttTopicPrefix: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    if (args.mqttTopicPrefix) {
+      return ctx.db
+        .query("systems")
+        .withIndex("by_mqttTopicPrefix", (q) =>
+          q.eq("mqttTopicPrefix", args.mqttTopicPrefix!)
+        )
+        .collect();
+    } else {
+      return ctx.db.query("systems").collect();
+    }
   },
 });
 
@@ -23,12 +35,14 @@ export const createSystem = mutation({
     location: v.string(),
     masterControllerMAC: v.string(),
     organizationId: v.id("organizations"),
+    mqttTopicPrefix: v.string(),
   },
   handler: async (ctx, args) => {
     const newSystemId = await ctx.db.insert("systems", {
       name: args.name,
       location: args.location,
       masterControllerMAC: args.masterControllerMAC,
+      mqttTopicPrefix: args.mqttTopicPrefix,
       isActive: true,
       createdAt: Date.now(),
       organizationId: args.organizationId,

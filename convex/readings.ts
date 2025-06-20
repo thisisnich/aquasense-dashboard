@@ -1,16 +1,32 @@
 import { query, mutation } from "./_generated/server";
+import { Doc, Id } from "./_generated/dataModel";
 import { v } from "convex/values";
 
 export const getSensorReadings = query({
-  args: { rowId: v.id("rows"), timeRange: v.optional(v.string()) },
+  args: { 
+    rowId: v.optional(v.id("rows")),
+    mqttTopicPrefix: v.optional(v.string()),
+    timeRange: v.optional(v.string())
+  },
   handler: async (ctx, args) => {
-    // For simplicity, we'll just return the latest 100 readings for the given rowId
-    // In a real application, timeRange would be used to filter by time.
-    return ctx.db
-      .query("sensorReadings")
-      .withIndex("by_row_timestamp", (q) => q.eq("rowId", args.rowId))
-      .order("desc")
-      .take(100);
+    if (args.rowId) {
+      return ctx.db
+        .query("sensorReadings")
+        .withIndex("by_row_timestamp", (q) => q.eq("rowId", args.rowId as Id<"rows">))
+        .order("desc")
+        .take(100);
+    } else if (args.mqttTopicPrefix) {
+      return ctx.db
+        .query("sensorReadings")
+        .withIndex("by_mqttTopicPrefix_timestamp", (q) =>
+          q.eq("mqttTopicPrefix", args.mqttTopicPrefix as string)
+        )
+        .order("desc")
+        .take(100);
+    } else {
+      // If neither rowId nor mqttTopicPrefix is provided, return an empty array or handle as per business logic
+      return [];
+    }
   },
 });
 

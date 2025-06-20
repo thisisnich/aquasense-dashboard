@@ -35,17 +35,43 @@ export const addSensorReading = mutation({
   handler: async (ctx: any, args: { rowId: Id<"rows">; data: any }) => {
     const { rowId, data } = args;
     const timestamp = Date.now();
-    await ctx.db.insert("sensorReadings", { rowId, timestamp, data });
+
+    // Fetch the row to get the systemId
+    const row = await ctx.db.get(rowId);
+    if (!row) {
+      throw new Error("Row not found");
+    }
+
+    // Fetch the system to get the mqttTopicPrefix
+    const system = await ctx.db.get(row.systemId);
+    if (!system) {
+      throw new Error("System not found");
+    }
+
+    await ctx.db.insert("sensorReadings", { rowId, timestamp, data, mqttTopicPrefix: system.mqttTopicPrefix });
   },
 });
 
 export const addSimulatedSensorReading = mutation({
   args: {
     rowId: v.id("rows"),
+    topicPrefix: v.string(),
   },
-  handler: async (ctx: any, args: { rowId: Id<"rows"> }) => {
-    const { rowId } = args;
+  handler: async (ctx: any, args: { rowId: Id<"rows">; topicPrefix: string }) => {
+    const { rowId, topicPrefix } = args;
     const timestamp = Date.now();
+
+    // Fetch the row to get the systemId
+    const row = await ctx.db.get(rowId);
+    if (!row) {
+      throw new Error("Row not found");
+    }
+
+    // Fetch the system to get the mqttTopicPrefix
+    const system = await ctx.db.get(row.systemId);
+    if (!system) {
+      throw new Error("System not found");
+    }
 
     // Generate random data for simulation
     const data = {
@@ -59,6 +85,6 @@ export const addSimulatedSensorReading = mutation({
       flowRate: parseFloat((Math.random() * (2 - 0.5) + 0.5).toFixed(2)), // 0.5-2 L/min
     };
 
-    await ctx.db.insert("sensorReadings", { rowId, timestamp, data });
+    await ctx.db.insert("sensorReadings", { rowId, timestamp, data, mqttTopicPrefix: system.mqttTopicPrefix });
   },
 }); 

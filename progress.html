@@ -24,5 +24,30 @@
 <p><strong>Date:</strong> 2024-05-27</p>
 <p><strong>Version:</strong> 1.0.2</p>
 
+<h3>Feature: Concurrent Development Script</h3>
+<p><strong>Description:</strong> Added a new npm script `convex-dev` to `package.json` that concurrently runs `convex dev` and `next dev --turbopack`. This simplifies the development workflow by allowing both the Convex backend and Next.js frontend to be started with a single command.</p>
+<p><strong>Date:</strong> 2024-05-28</p>
+<p><strong>Version:</strong> 1.0.3</p>
+
+<h3>Feature: Simulate MQTT Sensor Readings Page</h3>
+<p><strong>Description:</strong> Created a new page at `/simulate-mqtt` that allows users to input temperature and humidity values and publish them as simulated sensor readings to a specified MQTT topic and broker. This facilitates testing and development without requiring physical sensors.</p>
+<p><strong>Date:</strong> 2024-05-28</p>
+<p><strong>Version:</strong> 1.0.4</p>
+
+<h3>Feature: Configurable MQTT Topic Prefix</h3>
+<p><strong>Description:</strong> The system now allows for a configurable MQTT topic prefix, replacing the hardcoded "m5stack". This applies to both the MQTT simulator page and the main dashboard. Users can specify a custom topic prefix to align with their specific MQTT broker setup. The Convex backend has been updated to support this, including changes to `convex/schema.ts` to add `mqttTopicPrefix` to the `systems` table, and modifications to `convex/systems.ts` to filter systems by this prefix. The `app/simulate-mqtt/page.tsx` now dynamically constructs MQTT topics based on the prefix and row number, and `app/page.tsx` includes a UI element for users to input the desired topic prefix, which is also passed to simulated sensor readings.</p>
+<p><strong>Date:</strong> 2024-05-29</p>
+<p><strong>Version:</strong> 1.0.5</p>
+
+<h3>Feature: User Selectable MQTT Topic Subscription</h3>
+<p><strong>Description:</strong> The dashboard now allows users to select which MQTT topic to subscribe to for displaying sensor readings. When no specific row is selected, sensor readings are filtered based on the global MQTT topic prefix entered by the user. This enhances flexibility in monitoring different data streams.</p>
+<p><strong>Date:</strong> 2024-05-29</p>
+<p><strong>Version:</strong> 1.0.6</p>
+
+<h3>Feature: Dashboard Text Readability Improvement</h3>
+<p><strong>Description:</strong> Adjusted text color classes in `app/page.tsx` from lighter shades of gray to darker shades (e.g., `text-gray-800`, `text-gray-900`) to improve contrast and overall readability of the dashboard text. Also, modified the global `--foreground` CSS variable in `app/globals.css` to be pure black in light mode and pure white in dark mode for maximum contrast. Additionally, applied `text-gray-900` directly to all `h2` headings and "No X found" messages in `app/page.tsx`.</p>
+<p><strong>Date:</strong> 2024-05-29</p>
+<p><strong>Version:</strong> 1.0.9</p>
+
 </body>
 </html> 

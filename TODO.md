@@ -11,3 +11,7 @@
 - [x] Implement sensor data simulation for dashboard testing without a physical farm.
   - **Date Completed:** 2024-05-27
   - **Related Feature:** Sensor Data Simulation (Version 1.0.2)
+
+- [x] Make MQTT implementation compliant and allow dashboard to pick which topic its subscribed to.
+  - **Date Completed:** 2024-05-29
+  - **Related Feature:** Configurable MQTT Topic Prefix (Version 1.0.6)
