@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Project Progress</title>
+</head>
+<body>
+
+<h1>Project Progress Documentation</h1>
+
+<h2>Features Added/Edited:</h2>
+
+<h3>Feature: Client Component Fix for Convex</h3>
+<p><strong>Description:</strong> Resolved a `TypeError` related to `createContext` being used in a Server Component by explicitly marking `convex/client.tsx` as a Client Component.</p>
+<p><strong>Date:</strong> 2024-05-27</p>
+<p><strong>Version:</strong> 1.0.0</p>
+
+<h3>Feature: Public Wrapper for Default Organization Creation</h3>
+<p><strong>Description:</strong> Created a public Convex mutation `organizations:createDefaultOrganizationPublic` to wrap the internal `organizations:createDefaultOrganization` mutation. This allows client-side code (specifically in `app/page.tsx`) to correctly trigger the creation of a default organization without directly calling an internal function, resolving a server error related to function visibility.</p>
+<p><strong>Date:</strong> 2024-05-27</p>
+<p><strong>Version:</strong> 1.0.1</p>
+
+<h3>Feature: Sensor Data Simulation</h3>
+<p><strong>Description:</strong> Added a new Convex mutation `sensorReadings:addSimulatedSensorReading` to generate random sensor data for a selected row. A button has been added to the dashboard in `app/page.tsx` to trigger this function, allowing for testing of the dashboard functionality without a physical farm.</p>
+<p><strong>Date:</strong> 2024-05-27</p>
+<p><strong>Version:</strong> 1.0.2</p>
+
+</body>
+</html> 
